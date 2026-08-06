@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  passwordHash String
+  createdAt    DateTime     @default(now())
+  analyses     Analysis[]
+  dailyUsage   DailyUsage[]
+}
+
+model Analysis {
+  id           String   @id @default(cuid())
+  userId       String
+  taskType     String
+  prompt       String   @default("")
+  revisionMode String   @default("conservative")
+  originalText String
+  resultJson   String
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model DailyUsage {
+  id        String   @id @default(cuid())
+  userId    String
+  usageDate String
+  count     Int      @default(0)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, usageDate])
+}
