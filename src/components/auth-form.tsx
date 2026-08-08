@@ -26,7 +26,14 @@ export function AuthForm({ mode }: AuthFormProps) {
           password: form.get("password"),
         }),
       });
-      const data = await response.json();
+      const raw = await response.text();
+      let data: { error?: string } = {};
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        // Preserve a useful message when the hosting platform returns HTML.
+      }
+      if (!raw && !response.ok) throw new Error("The server returned an empty response. Check the deployment logs and database configuration.");
       if (!response.ok) throw new Error(data.error ?? "Something went wrong.");
       router.push("/dashboard");
       router.refresh();

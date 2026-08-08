@@ -10,6 +10,7 @@ const registerSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  try {
   const parsed = registerSchema.safeParse(await request.json());
   if (!parsed.success) {
     return NextResponse.json(
@@ -36,4 +37,11 @@ export async function POST(request: Request) {
   });
   await createSession({ userId: user.id, email: user.email });
   return NextResponse.json({ ok: true }, { status: 201 });
+  } catch (error) {
+    console.error("Registration failed", error);
+    return NextResponse.json(
+      { error: "Registration is temporarily unavailable. Check the database configuration." },
+      { status: 503 },
+    );
+  }
 }

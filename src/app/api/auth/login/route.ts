@@ -10,6 +10,7 @@ const loginSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  try {
   const parsed = loginSchema.safeParse(await request.json());
   if (!parsed.success) {
     return NextResponse.json({ error: "Enter your email and password." }, { status: 400 });
@@ -23,4 +24,11 @@ export async function POST(request: Request) {
 
   await createSession({ userId: user.id, email: user.email });
   return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("Login failed", error);
+    return NextResponse.json(
+      { error: "Sign-in is temporarily unavailable. Check the database configuration." },
+      { status: 503 },
+    );
+  }
 }
