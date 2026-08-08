@@ -17,30 +17,25 @@ const resultSchema = z.object({
 });
 
 type Input = {
-  taskType: "task1" | "task2"; prompt: string; text: string;
+  taskType: "research" | "coursework"; prompt: string; text: string;
   revisionMode: "conservative" | "polished";
-  image?: { data: string; mimeType: string };
 };
 
 export async function generateAnalysis(input: Input): Promise<AnalysisResult> {
   const key = process.env.DEEPSEEK_API_KEY?.trim();
   if (!key) throw new Error("DEEPSEEK_API_KEY is not configured.");
 
-  // DeepSeek API is text-only; images are silently ignored.
-  // The frontend shows a notice to users who try to upload images.
-
-  // Use deepseek-chat (DeepSeek-V3) — the most cost-effective model
   const model = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
 
-  const instruction = `You are a professional IELTS writing examiner. Evaluate the following IELTS ${input.taskType} response using the four official criteria: Task Achievement/Response, Coherence and Cohesion, Lexical Resource, and Grammatical Range and Accuracy. Revision mode: ${input.revisionMode}. Never invent chart values or facts not present in the student's response. Return exactly four feedback items, one per criterion. Quote evidence only from the response text. Band scores must be from 0 to 9 in 0.5 increments. The disclaimer must state this is an AI estimate, not an official IELTS score.
+  const instruction = `You are an academic writing editor. Evaluate this ${input.taskType} paper using four criteria: Argument and Contribution, Structure and Coherence, Academic Style, and Clarity and Language. Revision mode: ${input.revisionMode}. Do not invent evidence, citations, findings, or references. Return exactly four feedback items, one per criterion. Quote evidence only from the submitted text. Scores must be from 0 to 10 in 0.5 increments. The disclaimer must state that this is AI writing feedback and does not verify factual accuracy or academic integrity.
 
-QUESTION: ${input.prompt || "No question provided."}
-RESPONSE:
+TITLE OR BRIEF: ${input.prompt || "Not provided."}
+PAPER:
 ${input.text}
 
 Return a valid JSON object with exactly this structure:
 {
-  "overallBand": <number 0-9 in 0.5 steps>,
+  "overallBand": <number 0-10 in 0.5 steps>,
   "scores": {
     "taskAchievement": <number>, "coherenceCohesion": <number>,
     "lexicalResource": <number>, "grammarAccuracy": <number>
@@ -59,7 +54,7 @@ Return a valid JSON object with exactly this structure:
   ],
   "revisedText": "<full revised version of the response>",
   "revisionNotes": ["<note 1>", "<note 2>"],
-  "disclaimer": "This is an AI estimate, not an official IELTS score."
+  "disclaimer": "AI writing feedback only; factual accuracy, citations, and academic integrity have not been verified."
 }`;
 
   const response = await fetch("https://api.deepseek.com/chat/completions", {

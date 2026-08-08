@@ -7,7 +7,6 @@ import {
   Clock3,
   Download,
   FileText,
-  ImagePlus,
   History,
   LoaderCircle,
   LockKeyhole,
@@ -18,7 +17,6 @@ import {
   Zap,
 } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
 import { useMemo, useState } from "react";
 import { diffWords } from "diff";
 import type { AnalysisRecord, FeedbackItem, ScoreKey } from "@/lib/analysis";
@@ -30,8 +28,7 @@ type Props = {
   initialHistory: AnalysisRecord[];
 };
 
-const samplePrompt =
-  "Some people believe that technology has made education more accessible, while others think it has reduced the quality of classroom interaction. Discuss both views and give your own opinion.";
+const samplePrompt = "Digital technology and access to education";
 
 const sampleResponse = `Some people believe that technology has made education more accessible, while others argue that it has reduced the quality of classroom interaction. In my opinion, digital tools can improve learning when they support, rather than replace, teachers.
 
@@ -68,10 +65,9 @@ function FeedbackCard({ item }: { item: FeedbackItem }) {
 }
 
 export function Dashboard({ email, initialRemaining, initialHistory }: Props) {
-  const [taskType, setTaskType] = useState<"task1" | "task2">("task2");
+  const [taskType, setTaskType] = useState<"research" | "coursework">("research");
   const [revisionMode, setRevisionMode] = useState<"conservative" | "polished">("conservative");
   const [prompt, setPrompt] = useState("");
-  const [image, setImage] = useState<{ data: string; mimeType: "image/jpeg" | "image/png" | "image/webp"; preview: string } | null>(null);
   const [text, setText] = useState("");
   const [remaining, setRemaining] = useState(initialRemaining);
   const [history, setHistory] = useState(initialHistory);
@@ -83,17 +79,15 @@ export function Dashboard({ email, initialRemaining, initialHistory }: Props) {
   const [copied, setCopied] = useState(false);
 
   const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
-  const target = taskType === "task1" ? 150 : 250;
   const changes = useMemo(
     () => active ? diffWords(active.originalText, active.result.revisedText) : [],
     [active],
   );
 
   function useSample() {
-    setTaskType("task2");
+    setTaskType("research");
     setPrompt(samplePrompt);
     setText(sampleResponse);
-    setImage(null);
     setError("");
   }
 
@@ -108,7 +102,7 @@ export function Dashboard({ email, initialRemaining, initialHistory }: Props) {
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ taskType, revisionMode, prompt, text, image: image ? { data: image.data, mimeType: image.mimeType } : undefined }),
+        body: JSON.stringify({ taskType, revisionMode, prompt, text }),
       });
       const data = await response.json();
       if (data.error === "FREE_LIMIT_REACHED") {
@@ -128,21 +122,6 @@ export function Dashboard({ email, initialRemaining, initialHistory }: Props) {
     }
   }
 
-  function selectImage(file?: File) {
-    if (!file) return;
-    if (!(["image/jpeg", "image/png", "image/webp"].includes(file.type)) || file.size > 5_000_000) {
-      setError("Use a JPG, PNG, or WebP image smaller than 5 MB."); return;
-    }
-    // Show a warning that the image will not be analysed by the current AI model
-    setError("Image uploaded for reference only — the current AI model (DeepSeek) is text-only. Please also describe the question in the text box above.");
-    const reader = new FileReader();
-    reader.onload = () => {
-      const value = String(reader.result); const data = value.split(",")[1];
-      setImage({ data, mimeType: file.type as "image/jpeg" | "image/png" | "image/webp", preview: value });
-    };
-    reader.readAsDataURL(file);
-  }
-
   async function copyRevision() {
     if (!active) return;
     await navigator.clipboard.writeText(active.result.revisedText);
@@ -154,7 +133,7 @@ export function Dashboard({ email, initialRemaining, initialHistory }: Props) {
     if (!active) return;
     const scores = scoreOrder.map((key) => `- ${criterionLabels[key]}: ${active.result.scores[key].toFixed(1)}`).join("\n");
     const feedback = active.result.feedback.map((item) => `### ${item.title}\n\n**Evidence:** ${item.evidence}\n\n${item.explanation}\n\n**Suggestion:** ${item.suggestion}`).join("\n\n");
-    const report = `# L2Write IELTS Writing Report\n\n**Estimated band:** ${active.result.overallBand.toFixed(1)}\n\n## Scores\n${scores}\n\n## Summary\n${active.result.summary}\n\n## Feedback\n${feedback}\n\n## Revised response\n${active.result.revisedText}\n\n---\n${active.result.disclaimer}\n`;
+    const report = `# L2Write Academic Writing Report\n\n**Overall score:** ${active.result.overallBand.toFixed(1)}/10\n\n## Scores\n${scores}\n\n## Summary\n${active.result.summary}\n\n## Feedback\n${feedback}\n\n## Revised paper\n${active.result.revisedText}\n\n---\n${active.result.disclaimer}\n`;
     const url = URL.createObjectURL(new Blob([report], { type: "text/markdown" }));
     const link = document.createElement("a");
     link.href = url;
@@ -188,7 +167,7 @@ export function Dashboard({ email, initialRemaining, initialHistory }: Props) {
             {history.length === 0 && <p className="empty-history">Your five most recent analyses will appear here.</p>}
             {history.map((item) => (
               <button className={`history-item ${active?.id === item.id ? "is-active" : ""}`} key={item.id} onClick={() => { setActive(item); setResultTab("overview"); }}>
-                <span>{item.taskType === "task1" ? "Task 1" : "Task 2"} · Band {item.result.overallBand.toFixed(1)}</span>
+                <span>{item.taskType === "research" ? "Research paper" : "Coursework"} · {item.result.overallBand.toFixed(1)}/10</span>
                 <strong>{item.prompt}</strong>
                 <small><Clock3 size={11} /> {dateLabel(item.createdAt)}</small>
               </button>
@@ -198,15 +177,15 @@ export function Dashboard({ email, initialRemaining, initialHistory }: Props) {
 
         <section className="workspace-main">
           <div className="workspace-heading">
-            <div><p className="eyebrow"><span /> Writing workspace</p><h1>Improve your IELTS response.</h1></div>
-            <button className="sample-button" onClick={useSample}>Use sample response</button>
+            <div><p className="eyebrow"><span /> Academic writing workspace</p><h1>Strengthen your paper.</h1></div>
+            <button className="sample-button" onClick={useSample}>Use sample paper</button>
           </div>
 
           <div className="editor-card">
             <div className="editor-toolbar">
-              <div className="segmented" aria-label="IELTS task type">
-                <button className={taskType === "task1" ? "selected" : ""} onClick={() => setTaskType("task1")}>Task 1</button>
-                <button className={taskType === "task2" ? "selected" : ""} onClick={() => setTaskType("task2")}>Task 2</button>
+              <div className="segmented" aria-label="Paper type">
+                <button className={taskType === "research" ? "selected" : ""} onClick={() => setTaskType("research")}>Research paper</button>
+                <button className={taskType === "coursework" ? "selected" : ""} onClick={() => setTaskType("coursework")}>Coursework</button>
               </div>
               <div className="mode-control">
                 <span>Revision</span>
@@ -216,21 +195,16 @@ export function Dashboard({ email, initialRemaining, initialHistory }: Props) {
                 </select>
               </div>
             </div>
-            <label className="field-label" htmlFor="question">IELTS question</label>
-            <textarea id="question" className="question-input" value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder={taskType === "task1" ? "Paste the Task 1 chart or letter prompt..." : "Paste the Task 2 essay question..."} />
-            <div className="image-upload-row">
-              <label className="image-upload"><ImagePlus size={16} /><span>{image ? "Replace question image" : "Upload question image"}</span><input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => selectImage(event.target.files?.[0])} /></label>
-              <small style={{ color: "var(--text-muted, #888)" }}>⚠️ Current AI (DeepSeek) is text-only — image for reference only</small>
-            </div>
-            {image && <div className="question-image"><Image src={image.preview} alt="Uploaded IELTS question" width={900} height={600} unoptimized /><button title="Remove image" onClick={() => setImage(null)}><X size={15} /></button></div>}
-            <div className="response-label"><label className="field-label" htmlFor="response">Your response</label><span className={wordCount < target ? "under-target" : ""}>{wordCount} words · target {target}+</span></div>
-            <textarea id="response" className="response-input" value={text} onChange={(event) => setText(event.target.value)} placeholder="Write or paste your response here..." />
+            <label className="field-label" htmlFor="question">Paper title or assignment brief (optional)</label>
+            <textarea id="question" className="question-input" value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder="Add a title, research question, or assignment brief..." />
+            <div className="response-label"><label className="field-label" htmlFor="response">Your paper</label><span>{wordCount} words</span></div>
+            <textarea id="response" className="response-input" value={text} onChange={(event) => setText(event.target.value)} placeholder="Paste your paper or draft here..." />
             {error && <p className="workspace-error" role="alert">{error}</p>}
             <div className="editor-footer">
               <p><LockKeyhole size={13} /> Demo data stays in your local database.</p>
-              <button className="button analyse-button" disabled={loading || (!prompt.trim() && !image) || text.trim().length < 50} onClick={analyse}>
+              <button className="button analyse-button" disabled={loading || text.trim().length < 50} onClick={analyse}>
                 {loading ? <LoaderCircle className="spin" size={17} /> : <Sparkles size={17} />}
-                {loading ? "Analysing response..." : remaining === 0 ? "Upgrade to continue" : "Analyse writing"}
+                {loading ? "Analysing paper..." : remaining === 0 ? "Upgrade to continue" : "Analyse paper"}
                 {!loading && <ArrowRight size={17} />}
               </button>
             </div>
@@ -239,7 +213,7 @@ export function Dashboard({ email, initialRemaining, initialHistory }: Props) {
           {active ? (
             <section className="results-card">
               <div className="results-header">
-                <div><span>Writing evaluation</span><strong>{active.taskType === "task1" ? "IELTS Task 1" : "IELTS Task 2"}</strong></div>
+                <div><span>Academic writing evaluation</span><strong>{active.taskType === "research" ? "Research paper" : "Coursework paper"}</strong></div>
                 <div className="result-actions">
                   <button title="Copy revised response" onClick={copyRevision}>{copied ? <Check size={16} /> : <Clipboard size={16} />}</button>
                   <button title="Download report" onClick={downloadReport}><Download size={16} /></button>
@@ -253,7 +227,7 @@ export function Dashboard({ email, initialRemaining, initialHistory }: Props) {
               <div className="result-content">
                 {resultTab === "overview" && (
                   <div className="overview-grid">
-                    <div className="band-panel"><span>Estimated band</span><strong>{active.result.overallBand.toFixed(1)}</strong><small>Mock evaluation</small></div>
+                    <div className="band-panel"><span>Overall score</span><strong>{active.result.overallBand.toFixed(1)}</strong><small>Out of 10</small></div>
                     <div className="criteria-panel">
                       {scoreOrder.map((key) => (
                         <div className="criterion-row" key={key}>
@@ -262,13 +236,13 @@ export function Dashboard({ email, initialRemaining, initialHistory }: Props) {
                         </div>
                       ))}
                     </div>
-                    <div className="summary-panel"><h3>Examiner-style summary</h3><p>{active.result.summary}</p><small>{active.result.disclaimer}</small></div>
+                    <div className="summary-panel"><h3>Editorial summary</h3><p>{active.result.summary}</p><small>{active.result.disclaimer}</small></div>
                   </div>
                 )}
                 {resultTab === "feedback" && <div className="feedback-grid">{active.result.feedback.map((item) => <FeedbackCard item={item} key={item.id} />)}</div>}
                 {resultTab === "revised" && (
                   <div className="revised-view">
-                    <div className="revision-copy"><h3>Improved response</h3><p>{active.result.revisedText}</p></div>
+                    <div className="revision-copy"><h3>Improved paper</h3><p>{active.result.revisedText}</p></div>
                     <aside><h3>What changed</h3>{active.result.revisionNotes.map((note) => <p key={note}><Check size={14} />{note}</p>)}</aside>
                   </div>
                 )}
@@ -278,7 +252,7 @@ export function Dashboard({ email, initialRemaining, initialHistory }: Props) {
               </div>
             </section>
           ) : (
-            <section className="result-empty"><FileText size={24} /><div><strong>Your evaluation will appear here.</strong><p>Use the sample response to preview the complete workflow.</p></div></section>
+            <section className="result-empty"><FileText size={24} /><div><strong>Your evaluation will appear here.</strong><p>Use the sample paper to preview the complete workflow.</p></div></section>
           )}
         </section>
       </div>

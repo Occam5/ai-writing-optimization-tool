@@ -9,17 +9,17 @@ import {
 } from "lucide-react";
 
 const scores = [
-  ["Task response", "7.0"],
-  ["Coherence & cohesion", "6.5"],
-  ["Lexical resource", "7.0"],
-  ["Grammar", "6.5"],
+  ["Argument", "8.0"],
+  ["Structure", "7.5"],
+  ["Academic style", "8.0"],
+  ["Clarity", "7.5"],
 ];
 
 const features = [
   {
     icon: Gauge,
-    title: "IELTS-aligned scoring",
-    text: "See estimated band scores across the four official writing criteria.",
+    title: "Structured evaluation",
+    text: "See clear scores for argument, structure, academic style, and clarity.",
   },
   {
     icon: FileText,
@@ -59,11 +59,11 @@ export default function Home() {
 
       <section className="hero">
         <div className="hero-copy">
-          <p className="eyebrow"><span /> AI-powered IELTS writing practice</p>
-          <h1>Know exactly how to improve your IELTS writing.</h1>
+          <p className="eyebrow"><span /> AI-powered academic writing</p>
+          <h1>Make every paper clearer and stronger.</h1>
           <p className="hero-lede">
-            Get instant band estimates, criterion-based feedback, and a stronger
-            revision for every Task 1 and Task 2 response.
+            Get structured feedback, evidence-based suggestions, and a polished
+            revision while preserving your original argument.
           </p>
           <div className="hero-actions">
             <a className="button" href="/register">
@@ -79,11 +79,11 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="product-preview" aria-label="IELTS writing evaluation preview">
+        <div className="product-preview" aria-label="Academic writing evaluation preview">
           <div className="preview-topbar">
             <div>
               <span className="document-label">Writing evaluation</span>
-              <strong>Task 2 · Opinion essay</strong>
+              <strong>Research paper · Draft</strong>
             </div>
             <span className="usage-pill">4 of 5 left today</span>
           </div>
@@ -110,9 +110,9 @@ export default function Home() {
             </div>
             <aside className="score-panel">
               <div className="overall-score">
-                <span>Estimated band</span>
-                <strong>6.5</strong>
-                <small>Good foundation</small>
+                <span>Overall score</span>
+                <strong>7.5</strong>
+                <small>Strong foundation</small>
               </div>
               <div className="score-list">
                 {scores.map(([label, score]) => (

@@ -26,7 +26,7 @@ export type AnalysisResult = {
 
 export type AnalysisRecord = {
   id: string;
-  taskType: "task1" | "task2";
+  taskType: "research" | "coursework";
   prompt: string;
   revisionMode: "conservative" | "polished";
   originalText: string;
@@ -35,8 +35,8 @@ export type AnalysisRecord = {
 };
 
 export const criterionLabels: Record<ScoreKey, string> = {
-  taskAchievement: "Task achievement",
-  coherenceCohesion: "Coherence & cohesion",
-  lexicalResource: "Lexical resource",
-  grammarAccuracy: "Grammar range & accuracy",
+  taskAchievement: "Argument & contribution",
+  coherenceCohesion: "Structure & coherence",
+  lexicalResource: "Academic style",
+  grammarAccuracy: "Clarity & language",
 };

@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "L2Write | AI-powered IELTS writing optimization tool",
+  title: "L2Write | AI-powered academic writing optimizer",
   description:
-    "Get IELTS-aligned band estimates, actionable feedback, and a stronger revision for Task 1 and Task 2 writing.",
+    "Get structured academic feedback and a clearer revision of your paper.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
